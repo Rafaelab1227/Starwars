@@ -1,0 +1,397 @@
+---
+title: "Starwars Network Visualization"
+author: "Rafaela Becerra"
+output:
+  html_document:
+    number_sections: yes
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Starwars
+## Packages needed
+```{r}
+library(igraph)
+```
+## Load the Star Wars network created.
+```{r}
+setwd('C:/Users/Rafaela Becerra/Desktop/UC3M/Network_Analysis/Assignments/Starwars')
+sw.network <- read_graph('sw.net.txt', format='gml')
+```
+
+## Induced subgraph.
+```{r}
+include_v <- c(1,2,3,9,13,25,30,31,35,49,52,66, 67, 68,69, 70, 71:92)
+induced.1 <- induced_subgraph(sw.network, include_v)
+induced.1
+```
+
+## Visual representation of the induced subgraph with the simple graph layouts
+```{r align='center'}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_in_circle,
+            main='Starwars network with circular layout',
+            vertex.label=include_v,
+            vertex.color='chartreuse3',
+            edge.width=E(induced.1)$weight/10,
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='chartreuse3',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+```
+```{r, align="center"}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_as_star,
+            main='Starwars network with star layout',
+            vertex.label=include_v,
+            vertex.color='cyan4',
+            edge.width=E(induced.1)$weight/10
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='cyan4',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+```
+```{r, align="center"}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_as_tree,
+            main='Starwars network with tree layout',
+            vertex.label=include_v,
+            vertex.color='burlywood',
+            vertex.label.cex=0.75,
+            edge.width=E(induced.1)$weight/10
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='burlywood',
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+```
+```{r, align="center"}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_on_grid,
+            main='Starwars network with grid  layout',
+            vertex.label=include_v,
+            vertex.color='darkorchid1',
+            vertex.label.cex=1,
+            edge.width=E(induced.1)$weight/10
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='darkorchid1',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+```
+
+
+```{r}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_on_sphere,
+            main='Starwars network with sphere layout',
+            vertex.label=include_v,
+            vertex.color='aquamarine1',
+            vertex.label.cex=1,
+            edge.width=E(induced.1)$weight/10
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='aquamarine1',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+
+```
+
+```{r,   always_allow_html: true}
+library('edgebundleR')
+edgebundle(induced.1)
+```
+
+```{r}
+library('devtools')
+library('chorddiag')
+chorddiag(as.matrix(as_adjacency_matrix(induced.1)),
+          margin = 100,
+          groupnameFontsize = 10,
+          ticklabelFontsize = 10,
+          showGroupnames = TRUE,
+          showTicks = FALSE,
+          groupnamePadding = 10)
+
+```
+
+The plots above correspond to different types of layouts for representating the same network which in this case corresponds to the interactions in Starwars scenes of 38 characters.
+
+Recall that this is a subset of the whole Starwars characters that participated on the 5th episode of the series and that in this group there were considered most of the recurrent characters consequently, harbored many connections between them.
+
+We have performed:
+
+1. Circular layout were the vertices are arranged in a circle with a prespecified order beggining with the center-right and continuing with the circumference above, ordering the characters according to the order they maintain in the data. 
+
+
+2. Star layout that organized the characters just like the circular layout but puts the first character in the center. This layout will allow to put one of the most important chararacters and visualize better the edges corresponding to it.
+
+3. Tree layout, which arranges the characters based on the important connections by putting the one with the highest number that in this case is Luke, as we can see. This graph allows us to see more clearly the relationships but there are a lot of characters so the display of the graph is not so nice because it overlays vertices.
+
+4. Grid layout which organized the characters in a rectangular matrix form so we could visualize better the connections and the characters. Additionally, the character Gold Five which corresponds to the 79 value appears to be connected because this layout puts together all of the characters and the connections are not that clear.
+
+5. Sphere layout which displays the vertices approximately uniformly, this might be the most difficult to read for this data. Also, the character 79 which is Gold five seems to have connections and this is not the case, so this layout does not separate the ones without connections at a simple view.
+
+6. Additionally, with the *edgebundleR* library, we have performed a chord diagram which allows to create an interactive graph that displays in a nicer way the characters and their connections. Moreover, with the *chorddiag* library we created a better layout than the ones presented early that shows each connection with its value  or the number of scenes wich made together and different colors for the characters, consequently, allows to visualize better a general display of the performance of each character, but we do need to take into account that there are situations when we will need a static view, then all the other layouts, with more addecuations involve, could become a better option. 
+ In all of the static views, we have determined the width of the edges as the weights or the number of scenes in which the characters of the vertices appear together. Also, the interactive graphs allow us to see this value by passing through the cursor. As display, Gold Five appears alone in all of the episodes, conversely, we could say that Han with Chewbacca seems to be a repetitive duo on the scenes. Also, with major appearences together are Han with C-3PO, Luke or Leia, and other combinations like Luke and R2-D2, Leia and Chewbacca, or Leia and C-3PO.
+
+Also, by the number of edges we can determine which characters appear with more characters, for example, we see that characters like Needa, Janson, Dack, Jerjerrod appear just with one other character and these appereances are not frequent as the width is really small. On the other side, characters like Darth Vader, Luke, Leia and C-3PO, appear with several edges that connect it to other characters, so this means that they interacted with much more characters than the others. 
+
+
+## Visual representation of the induced subgraph with other graph layouts 
+
+
+```{r}
+set.seed(123)
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_with_dh,
+            main='Starwars network with Davidson-Harel layout',
+            vertex.label=include_v,
+            vertex.color='gold1',
+            vertex.label.cex=1
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='gold1',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+
+```
+
+```{r}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_with_fr,
+            main='Starwars network with Fruchterman-Reingold layout',
+            vertex.label=include_v,
+            vertex.color='darkseagreen1',
+            vertex.label.cex=1
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='darkseagreen1',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+
+```
+
+```{r}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_with_gem,
+            main='Starwars network with GEM force-directed layout',
+            vertex.label=include_v,
+            vertex.color='chocolate1',
+            vertex.label.cex=1
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='chocolate1',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+
+```
+```{r}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_with_graphopt,
+            main='Starwars network with graphopt layout',
+            vertex.label=include_v,
+            vertex.color='darkseagreen3',
+            vertex.label.cex=1
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='darkseagreen3',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+
+```
+
+
+```{r}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_with_kk,
+            main='Starwars network with Kamada-Kawai layout',
+            vertex.label=include_v,
+            vertex.color='darkolivegreen1',
+            vertex.label.cex=1
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='darkolivegreen1',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+
+```
+
+```{r}
+par(mar=c(0,0,2,1))
+
+plot.igraph(induced.1,
+            layout=layout_with_mds,
+            main='Starwars network with multidimensional scaling layout',
+            vertex.label=include_v,
+            vertex.color='coral1',
+            vertex.label.cex=1
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',pch=21, pt.bg='coral1',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+
+```
+
+Now, we have created six more layouts for the Starwars 5th episode subset of characters.
+
+1. Davidson-Harel layout which is based on an algorithm for creating an energy function that distributes the vertices that in this case are the characters away from each other and minimizes the edge crossing.
+
+Other visualizations which use similar algorithms to present the layout are:
+
+2. Fruchtermann and Reingold,
+3. GEM force-directed,
+4. Graphopt layout, and
+5. Kamada and Kawai.
+
+
+If we take a look a these visualizations and compare them, we can see that the one which shows better the data is the graphopt which in this case achieves a clear separation of all of the characters and shows the 79 character which does not present scenes separetely but not as far, so all the display is completely visible. 
+
+On the other hand, the Davidson-Harel and the GEM separate too much Gold Five so the display turns out overlay and difficults the viasualization. 
+
+Additionally, we have created a graph based on the multidimensional scaling layout, which projects the points from a higher dimensional space in a plane. We can see that this layout is not the best for the data and that the ones describe below performed much better. 
+
+## Best possible visual representation of the induced subgraph with the Davidson-Harel layout.
+
+
+```{r}
+include_v <- c(1,2,3,9,13,25,30,31,35,49,52,66, 67, 68,69, 70, 71:78, 80:92)
+induced.2 <- induced_subgraph(sw.network, include_v)
+```
+
+```{r, fig.width=8, fig.height=6}
+set.seed(1)
+V(induced.2)$size <- 3*log(strength(induced.2))+8
+
+palette <- colorRampPalette(c('yellow','cyan','blue'))(38)
+colors<-palette[cut((as_data_frame(induced.2, what ='vertices')[,5]), 38)]
+
+layout(matrix(1:2,ncol=2), width = c(4,0.75),height = c(1,1))
+
+par(mar=c(3,0,1,0.25))
+
+plot.igraph(induced.2,
+            layout=layout_with_dh,
+            main='Starwars network with Davidson-Harel layout',
+            vertex.label=include_v,
+            vertex.color=colors,
+            vertex.label.cex=1,
+            edge.width=E(induced.1)$weight/5
+            )
+
+legend('topright',
+       legend=paste(include_v,
+                    rownames(as_data_frame(induced.1, what ='vertices')[1])),
+       col='black',
+       ncol=1, 
+       cex = 0.5, 
+       y.intersp=1,
+       x.intersp=1)
+
+legend_image <- as.raster(matrix(colorRampPalette(c('yellow','cyan','blue'))(38), ncol=1))
+plot(c(0,2),c(0,1),
+     type = 'n',
+     axes = FALSE,
+     xlab = '', ylab = '', main = 'Strength')
+text(x=1.5, 
+     y = seq(0,1,l=5),
+     labels = c(max(strength(induced.2)),'','','',min(strength(induced.2))))
+rasterImage(legend_image, 0, 0, 1,1)
+
+```
+
+To achive a better representation of the network using the Davidson-Harel layout, we have take out the 79 character since we identify that this was the value that did not allow the algorithm to perform better. 
+
+Additionally, we have performed some improvements. First, we have assigned the vertex degree which represents the number of appearences that characters have with other characters to the size of the vertex, consequently, we can visualize which characters have intervened more. Second, we have mantain the edge width as the weight of the connection between characters so that we can see with whom each character relate more. Third, we created a scale of the degree of the vertex considering weights so that the size of the vertex could be related to the color as well. With this improvements we can have a better display of this subset of the network and facilitate the finding of the same insights that we have previously describe. 
+

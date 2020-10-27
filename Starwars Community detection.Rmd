@@ -1,0 +1,372 @@
+---
+title: "Starwars community detection"
+author: "Rafaela Becerra"
+output:
+  html_document:
+    number_sections: yes
+    df_print: kable
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Starwars
+## Packages needed
+```{r}
+set.seed(123)
+library(igraph)
+```
+## Load the Star Wars network created.
+```{r}
+setwd('C:/Users/Rafaela Becerra/Desktop/UC3M/Network_Analysis/Assignments/Starwars')
+sw.network <- read_graph('sw.net.txt', format='gml')
+gsize(sw.network)
+gorder(sw.network)
+```
+
+## Cliques of the network & graph coreness
+
+
+### Cliques
+
+```{r}
+sw.network.cliques <- cliques(sw.network)
+length(sw.network.cliques)
+table(sapply(sw.network.cliques,length))
+```
+
+```{r}
+largest_cliques(sw.network)
+sw.network.max.cliques <- max_cliques(sw.network)
+table(sapply(sw.network.max.cliques,length))
+```
+
+Recall that this data set contains the number of scenes that the characters of the 1 to 5 episodes of Starwars did together. The attributes for the edges are the source of the vertex of one character and the target, the vertex of the other character, and the value is the number of scenes where they appear together. 
+
+A clique can be understood as a complete subgraph were its vertices are fully connected. In this case, we can see that we have 3702 cliques, composed by 111 cliques of size one which corresponds just to the number of characters, 444 of size two that are actually the number of edges that we have since, as said, this data presents the connections between characters based on their participation together on scenes. Moreover, we have 848 cliques of size 3, which means that 3 characters act with each other, and the largest value of table 999, for the cliques with size 4. Additionally, there are fewer cliques of size 5, 6, 7, 8, and 9, with 769, 384, 122, 23, and lastly just 2.
+
+Moreover, we check the maximal number of cliques to see if the rest of the cliques are just subgraphs of these ones. As we can see, only 5 out of the 23 of cliques of size 5 are part of the maximal cliques and 13 out of the 122 cliques of size 7 are part of these maximals. Also, we can see that this behavior is more visible in the rest of the sizes as in this case the number of cliques of each size that are in the group of the maximal are fewer compare to the total number of each size. This can be interpreted as there are just some characters that connect with a lot of other characters but there are a lot of others that just have fewer combined participation with a diversity of characters, generating a sparse network was the most common type of clique is just of size 4. We have identified that seven characters remain the same in both cliques of size nine, this means that these ones are forming the base of the largest subgraph, consequently, the combinations of the maximals is also reduced.
+
+### Coreness
+```{r}
+sw.network.cores <- graph.coreness(sw.network)
+sw.network.cores
+```
+
+To reduce the computational cost derived from the calculations of the cliques, one can calculate the value of k of the maximal k-core for the set of vertices of the graph denoted as coreness. Now, we have calculated these values for each of the characters of Starwars, the results show that there are eleven characters with the maximum number of k-core for the network, which is 8. These characters are Darth Vader, R2-D2, Qui-Gon, Obi-Wan, Emperor, Jar Jar, Padme, Mace Windu, Yoda, and Bail Organa. The results are the same as shown for the cliques of size 9, as expected. In this case, the network is small but in the cases of large networks, the coreness can be an improved metric because of the computational cost that can cause the detailed obtention of the cliques. Additionally, we present a histogram with the results of the k-core, as we can see, most of the characters are part of a subgraph with no more than 5 join vertices, which confirms that the network is not dense.  
+
+```{r}
+max(sw.network.cores)
+which(sw.network.cores==max(sw.network.cores))
+length(which(sw.network.cores==max(sw.network.cores)))
+
+hist(sw.network.cores,
+     col="deepskyblue2",
+     main="Histogram for the k-cores in the Starwars network")
+```
+
+
+## Density and the clustering coefficient (transitivity) of the network.
+
+### Density
+```{r}
+
+print(paste('Density of Starwars network: ',edge_density(sw.network)))
+
+ego.1 <- make_ego_graph(sw.network,order=1,nodes=V(sw.network)[1])
+print(paste('Density of the ego network of Darth Vader: ',edge_density(ego.1[[1]])))
+
+ego.2 <- make_ego_graph(sw.network,order=1,nodes=V(sw.network)[9])
+print(paste('Density of the ego network of Obi Wan: ',edge_density(ego.2[[1]])))
+
+ego.3 <- make_ego_graph(sw.network,order=1,nodes=V(sw.network)[25])
+print(paste('Density of the ego network of C-3PO: ',edge_density(ego.3[[1]])))
+
+```
+
+We have calculated the density for the Starwars Network, which results in a value of 
+0.07272. The density measurement can be understood as the percentage of edges that are being taken into account in the network from the total potential ones. In this case, we can see that this is a low value but this is expected considering the nature of the data and that not all characters will act together. Moreover, the density value can provide also a measure of how close the graph is to being a clique, in this case, it is really far from becoming one because it misses a lot of connections between the vertices. Additionally, we have calculated the density measure for some important characters to provide a measure of density in the neighborhood of each one. We see that Darth Vader is less densely surrounded than Obi-Wan and C-3Po and that in fact, Obi-Wan is more connected than these other two within its subgraphs. 
+
+### Transitivity
+```{r}
+transitivity(sw.network,type="global")
+```
+
+The clustering coefficient or what it is referred to as transitivity is a ratio that measures the number of closed triplets in the graph compare to the total number of triplets. If we take into account this measurement, we can see that the network is shown as denser, but still with a 35.09% can not be called high, this means that not even by taking into account a local level of density it can be considered as a dense network. Once again, this is caused by the fact that the data shows relations that are not expected to connect the vertices in a massive way.
+
+
+## Number of components of the network. Check whether the network verifies the small world property.
+
+```{r sw.network-6}
+comps.weak.sw.network <- igraph::components(sw.network,mode="weak")
+comps.weak.sw.network$no
+comps.weak.sw.network$csize
+
+comps.strong.sw.network <- igraph::components(sw.network,mode="strong")
+comps.strong.sw.network$no
+comps.strong.sw.network$csize
+```
+
+```{r sw.network-7}
+gc.sw.network <- induced_subgraph(sw.network,vids=V(sw.network)
+                                  [comps.strong.sw.network$membership==1])
+gc.sw.network
+mean_distance(gc.sw.network)
+transitivity(gc.sw.network)
+```
+
+
+This Network has just two components, one is a single character Gold Five that it is not connected to any other character and the other component is form by the 110 characters, considering that every vertex is reachable from every vertex by a directed walk. Consequently, it is easy to see that the giant component will be the one with all the characters. Moreover, the small-world property can be considered when the shortest-path distance between pairs of vertices is generally quite small, and when the clustering coefficient is relatively high. This network shows that the mean distance of the shortest-path is 2.63 which is low and the transitivity is equal to 35.09%, which is not a high value but it is not as low either, therefore, we could say that the Small world property holds.
+
+
+## Community detection methods.
+
+
+```{r}
+data <- as_data_frame(sw.network, what='vertices')
+method.compare <- setNames(data.frame(matrix(ncol = 3, nrow = 6)), 
+                           c("Modularity", "K", "Time elapsed"))
+
+row.names(method.compare) <- c('Optimal','Fast greedy','Louvain',
+                                'Label propagation','Edge betweeness','Walktrap')
+```
+
+### Maximal modularity community detection
+
+The maximal modularity method will find the partition that maximizes the modularity in order to have a better vertex partition. This algorithm involves an optimization procedures with a highly computational cost considering that will compute the modularity for all possible partitions. In this case, the network is too large to be analysed under this methodology, this is why just the code is describe next but there are no results.
+
+
+```{r eval=FALSE}
+sw.network.op <- cluster_optimal(sw.network)
+sw.network.op
+length(sw.network.op)
+sizes(sw.network.op)
+membership(sw.network.op)
+modularity(sw.network.op)
+plot(sw.network.op,sw.network,main="sw.network network with maximal modularity")
+```
+
+### Fast greedy community detection
+
+The fast greedy is a simplified version of the previous method. In this case, we can see that the number of communities resulting is 7, where the red one appears to be the larger with 54 out of the 111 characters. This community contains the main characters that we have seen in the previous assignments were the more connected ones like Darth Vader, Qui-Won, Obi-Wan, C-3PO and more. The second largest is the light blue, with 20 less connected characters like Coloneel Dato, Poe, and Jess. The third largest is the blue one with 15 characters and wich includes characters like Chewbacca, Leia, Luke and Han Solo, which recall were some of the characters that had more number of scenes with other characters. The rest of communities have fewer characters with 10, 8, 3, and lastly, 1 which corresponds to Gold Five. Moreover, the modularity of the partition for this method is 0.3962.  
+
+```{r}
+Start_time <- Sys.time()
+sw.network.fg <- cluster_fast_greedy(sw.network)
+sw.network.fg
+End_time <- Sys.time()
+
+print(paste('Time elapsed: ', (End_time-Start_time)))
+```
+```{r}
+length(sw.network.fg)
+sizes(sw.network.fg)
+membership(sw.network.fg)
+modularity(sw.network.fg)
+```
+
+```{r}
+method.compare[2,1]<- modularity(sw.network.fg)
+method.compare[2,2]<- length(sizes(sw.network.fg))
+method.compare[2,3]<-(End_time-Start_time)
+```
+
+```{r}
+par(mar=c(0,0,1,1))
+sw.network.fg <- cluster_fast_greedy(sw.network)
+plot(sw.network.fg,
+     sw.network,
+     vertex.color=membership(sw.network.fg),
+     vertex.label=seq(1:111),
+     #vertex.label=NA,
+     main="sw.network network with fast greedy")
+
+```
+
+
+### Louvain community detection
+
+The Louvain community detection method is similar to the optimal modularity but the optimization is done using a hierarchical approach, then this can be used for large networks. In this case, as same as before we obtained that the optimal number of communities is 7 with a modularity of 0.3962 with the same partition as the last method.
+
+
+```{r}
+Start_time <- Sys.time()
+sw.network.lo <- cluster_louvain(sw.network)
+sw.network.lo
+End_time <- Sys.time()
+
+print(paste('Time elapsed: ', (End_time-Start_time)))
+```
+
+```{r}
+method.compare[3,1]<- modularity(sw.network.lo)
+method.compare[3,2]<- length(sizes(sw.network.lo))
+method.compare[3,3]<-(End_time-Start_time)
+```
+
+```{r}
+length(sw.network.lo)
+sizes(sw.network.lo)
+membership(sw.network.lo)
+modularity(sw.network.lo)
+```
+
+```{r}
+par(mar=c(0,0,1,1))
+plot(sw.network.lo,
+     sw.network,
+     vertex.color=membership(sw.network.fg),
+     vertex.label=seq(1:111),
+     #vertex.label=NA,
+     main="sw.network network with Louvain")
+
+```
+
+### Label propagation community detection
+
+The label propagation method considers a partition based on the vertex neighborhood.In contrast to the last method, this one creates a different partition with an optimal K of 4 communities with a modularity of 0.3925, a little bit lower compare to the rest. The vertices are cluster in communities of sizes 65, 27, 18 and 1. The bigger one corresponds to the orange vertices that contain characters like Darth Vader, Qui-Gon, Obi-Wan, Emperor, that were some of the characters in the maximal size cliques, and similar to the ones obtained in the past methods, but now this community contains eleven characters more and also we are able to distinguish some missing characters from the past group like C-3PO, that now is part of the second biggest community where also lays Leia, Jabba, Han, Chewbacca, just to name the most important ones. The third group has a size of just 18 characters, at simple view we see that here appears names of characters that were not that connected, and, lastly we have Gold Five as a separate community, as expected. 
+
+```{r}
+Start_time <- Sys.time()
+sw.network.lp <- cluster_label_prop(sw.network,initial=as.vector(membership(sw.network.lo)))
+sw.network.lp
+End_time <- Sys.time()
+
+print(paste('Time elapsed: ', (End_time-Start_time)))
+```
+
+```{r}
+length(sw.network.lp)
+sizes(sw.network.lp)
+membership(sw.network.lp)
+modularity(sw.network.lp)
+```
+
+```{r}
+method.compare[4,1]<- modularity(sw.network.lp)
+method.compare[4,2]<- length(sizes(sw.network.lp))
+method.compare[4,3]<-(End_time-Start_time)
+```
+
+```{r}
+par(mar=c(0,0,1,1))
+plot(sw.network.lp,
+     sw.network,
+     vertex.color=membership(sw.network.fg),
+     vertex.label=seq(1:111),
+     #vertex.label=NA,
+     main="sw.network network with label propagation")
+
+```
+
+### Edge betweenness community detection
+
+This method bases the community detection on the edge betweenness of the set of edges in the network. The computational cost derived by the calculations performed are a little bit higher for this network but not as high as the optimal modularity, therefore, it is a method that turns to be viable for this network. The results show a modularity smaller than the rest of methods with a value of just 0.3456 considering a K equal to 6. 
+
+The partition suggested by this method involves two large communities of size 58 and 42, and four smaller ones of sizes 4, 3 and 1. The largest community harbors characters like Darth Vader, Qui-Gon, Obi-Wan, Emperor, Jabba, just to main the most important ones considering some of the results of the previous assignment, and also based on the characters that were part of the maximal size clique. Moreover, the second largest includes Leia, Han, Luke Chewbacca, among others. The smallest one is just conformed by Gold Five, and the rest of characters in the remaining communities appear to be some less connected characters.
+
+
+```{r}
+Start_time <- Sys.time()
+sw.network.eb <- cluster_edge_betweenness(sw.network,directed=FALSE)
+sw.network.eb
+End_time <- Sys.time()
+
+print(paste('Time elapsed: ', (End_time-Start_time)))
+```
+
+```{r}
+length(sw.network.eb)
+sizes(sw.network.eb)
+membership(sw.network.eb)
+modularity(sw.network.eb)
+```
+
+```{r}
+method.compare[5,1]<- modularity(sw.network.eb)
+method.compare[5,2]<- length(sizes(sw.network.eb))
+method.compare[5,3]<-(End_time-Start_time)
+```
+
+```{r}
+par(mar=c(0,0,1,1))
+plot(sw.network.eb,
+     sw.network,
+     vertex.color=membership(sw.network.fg),
+     vertex.label=seq(1:111),
+     #vertex.label=NA,
+     main="sw.network network with edge betweenness")
+
+```
+
+### Walktrap community detection
+
+The Walktrap community detection bases partition on a hierarchical clustering considering distances between vertices. In this case, the results show that the partition should be done among 17 groups, which is the largest partition resulting from any of the methods. Although, the modularity is lower than the  Fast greedy and the Louvain community detection, it is higher than the Edge Betweenness. 
+
+The communities are made up by one of a larger size with 44 characters, four medium size with values of 19, 11, 7 and 6, five of size 3 and 4, and seven communities with just one character. We can see that the larger community harbors characters like  Darth Vader, Qui-Gon, Obi-Wan, and Emperor, similar to the rest methods, and in the second largest remain Leia, Han, Luke and Chewbacca, but conversely, separates these groups and creates a lot more communities that are isolated characters.
+
+```{r}
+Start_time <- Sys.time()
+sw.network.wa <- cluster_walktrap(sw.network)
+sw.network.wa
+End_time <- Sys.time()
+
+print(paste('Time elapsed: ', (End_time-Start_time)))
+```
+
+```{r}
+length(sw.network.wa)
+sizes(sw.network.wa)
+membership(sw.network.wa)
+modularity(sw.network.wa)
+```
+
+```{r}
+method.compare[6,1]<- modularity(sw.network.wa)
+method.compare[6,2]<- length(sizes(sw.network.wa))
+method.compare[6,3]<-(End_time-Start_time)
+```
+
+```{r}
+par(mar=c(0,0,1,1))
+plot(sw.network.wa,
+     sw.network,
+     vertex.color=membership(sw.network.fg),
+     vertex.label=seq(1:111),
+     #vertex.label=NA,
+     main="sw.network network with Walktrap")
+
+```
+
+By comparing all the community detection methods calculated, we can say that the best algorithms for this network are the Fast Greedy and Louvain method with a modularity measure of 0.3962382 and a partition of 7 groups. By ranking the modularity measurements of the rest we got that in third place will be the Label propagation method with a modularity measure of 0.3926 and four communities, followed by the Walktrap community detection with 17 communities and 0.3808788 of modularity, and lastly, with a modularity of 0.3456612 the Edge Betweeness based on a partition on 6 groups. Moreover, the optimal modularity resulted as an infeasible procedure due to the computational cost that implies the calculation of the modularity partition that maximizes the modularity over
+all possible partitions. 
+
+Additionally, if we take into account the computational cost measure in time for the methods we can see that the best and fastest method is the Louvain, which starts with the creation of small communities and continious to join them if reaching larger ones increases the modularity, this algorithm reached the highest modularity and within 0.12 minutes, therefore is the best partition that we can get of the network in natural subsets.
+
+```{r}
+library("pander")
+pandoc.table(method.compare)
+```
+
+## Assortativity coefficient.
+
+```{r}
+degree.sw.network <- igraph::degree(sw.network)
+sw.network.degrees <- matrix(NA,nrow=ecount(sw.network),ncol=2)
+edges.sw.network <- get.edgelist(sw.network)
+for (i in 1:ecount(sw.network)){sw.network.degrees[i,]<-degree.sw.network[edges.sw.network[i,]]}
+plot(sw.network.degrees,pch=19,col="deepskyblue2",main="Degree pairs for the Starwars network",
+     xlab="Degree",ylab="Degree")
+assortativity_degree(sw.network,V(sw.network))
+```
+
+In an assortative network, we can see that the influencers tend to link to each other and avoid linking to small degree vertices, and, that these ones tend to connect to other small degree vertices. By taking a look at the plot of degree pairs we can see that Darth Vader which was the most connected character does not only connect to higher degree vertices, on the contrary, we can see that connects with a diversity of characters, this behavior is replicable for other important characters. Also, we can see that characters with smaller degree also connect to higher degree vertices. Furthermore, if we take a look at the assortative ratio, we can see that with a negative value of -0.2086, this measurement indicates the disassortativeness of it. This is expected because of the nature of the dataset, recall that this network presents the characters in the episodes of Starwars and the connections with each other based on the scenes that made together, consequently, we could expect that characters that appear the most and are considered the most important ones will be acting with less participative characters as well. 
+
+
+
